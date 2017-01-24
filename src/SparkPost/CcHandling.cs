@@ -10,24 +10,18 @@ namespace SparkPost
         internal static void DoStandardCcRewriting(Transmission transmission, IDictionary<string, object> result)
         {
             var recipients = transmission.Recipients;
-            if (recipients.All(r => r.Type == RecipientType.To))
+            if (recipients.All(RecipientTypeIsTo))
                 return;
 
-            if (recipients.Count(r => r.Type == RecipientType.To) != 1)
-                throw new ArgumentException("There must be exactly one 'To' recipient if there are copied recipients.");
+            var toRecipient = recipients.FirstOrDefault(RecipientTypeIsTo);
+            if (recipients.Count(RecipientTypeIsTo) != 1 || toRecipient.Address == null)
+                return;
 
-            var toRecipient = recipients.Single(r => r.Type == RecipientType.To);
-            if (toRecipient.Address == null)
-                throw new ArgumentException("'To' recipient has no address.");
-
-            var toName = toRecipient.Address.Name;
-            var toEmail = toRecipient.Address.Email;
-
-            var ccRecipients = recipients.Where(r => r.Type == RecipientType.CC);
+            var ccRecipients = recipients.Where(RecipientTypeIsCC);
             if (ccRecipients.Any())
             {
                 var ccHeader = GetCcHeader(ccRecipients);
-                if (ccHeader != null)
+                if (!String.IsNullOrWhiteSpace(ccHeader))
                 {
                     MakeSureThereIsAHeaderDefinedInTheRequest(result);
                     SetThisHeaderValue(result, "CC", ccHeader);
@@ -35,8 +29,18 @@ namespace SparkPost
             }
 
             var resultRecipients = (result["recipients"] as IEnumerable<IDictionary<string, object>>).ToList();
-            SetFieldsOnRecipients(resultRecipients, toName, toEmail);
+            SetFieldsOnRecipients(resultRecipients, toRecipient.Address.Name, toRecipient.Address.Email);
             result["recipients"] = resultRecipients;
+        }
+
+        private static bool RecipientTypeIsTo(Recipient recipient)
+        {
+            return recipient.Type == RecipientType.To;
+        }
+
+        private static bool RecipientTypeIsCC(Recipient recipient)
+        {
+            return recipient.Type == RecipientType.CC;
         }
 
         private static void SetFieldsOnRecipients(IEnumerable<IDictionary<string, object>> recipients,

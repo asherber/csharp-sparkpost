@@ -454,34 +454,49 @@ namespace SparkPost.Tests
             }
 
             [Test]
-            public void It_should_throw_exception_with_no_to_recipient()
+            public void It_should_do_nothing_with_no_to_recipient()
             {
-                var recipient1 = new Recipient { Type = RecipientType.CC, Address = new Address() };
-                var recipient2 = new Recipient { Type = RecipientType.BCC, Address = new Address() };
+                var recipient1 = new Recipient { Type = RecipientType.CC, Address = new Address { Email = Guid.NewGuid().ToString() } };
+                var recipient2 = new Recipient { Type = RecipientType.BCC, Address = new Address { Email = Guid.NewGuid().ToString() } };
+
                 transmission.Recipients = new List<Recipient> { recipient1, recipient2 };
 
-                Assert.That(() => { mapper.ToDictionary(transmission); }, Throws.ArgumentException);
+                mapper.ToDictionary(transmission)
+                    ["content"]
+                    .CastAs<IDictionary<string, object>>()
+                    .ContainsKey("headers")
+                    .ShouldBeFalse();
             }
 
             [Test]
-            public void It_should_throw_exception_with_multiple_to_recipients()
+            public void It_should_do_nothing_with_multiple_to_recipients()
             {
-                var recipient1 = new Recipient { Type = RecipientType.To, Address = new Address() };
-                var recipient2 = new Recipient { Type = RecipientType.To, Address = new Address() };
-                var recipient3 = new Recipient { Type = RecipientType.CC, Address = new Address() };
+                var recipient1 = new Recipient { Type = RecipientType.CC, Address = new Address { Email = Guid.NewGuid().ToString() } };
+                var recipient2 = new Recipient { Type = RecipientType.To, Address = new Address { Email = Guid.NewGuid().ToString() } };
+                var recipient3 = new Recipient { Type = RecipientType.To, Address = new Address { Email = Guid.NewGuid().ToString() } };
+
                 transmission.Recipients = new List<Recipient> { recipient1, recipient2, recipient3 };
 
-                Assert.That(() => { mapper.ToDictionary(transmission); }, Throws.ArgumentException);
+                mapper.ToDictionary(transmission)
+                    ["content"]
+                    .CastAs<IDictionary<string, object>>()
+                    .ContainsKey("headers")
+                    .ShouldBeFalse();
             }
 
             [Test]
-            public void It_should_throw_exception_if_to_has_no_address()
+            public void It_should_do_nothing_if_to_has_no_address()
             {
-                var recipient1 = new Recipient { Type = RecipientType.To, Address = null };
-                var recipient2 = new Recipient { Type = RecipientType.BCC, Address = new Address() };
+                var recipient1 = new Recipient { Type = RecipientType.CC, Address = new Address { Email = Guid.NewGuid().ToString() } };
+                var recipient2 = new Recipient { Type = RecipientType.To, Address = null };
+
                 transmission.Recipients = new List<Recipient> { recipient1, recipient2 };
 
-                Assert.That(() => { mapper.ToDictionary(transmission); }, Throws.ArgumentException);
+                mapper.ToDictionary(transmission)
+                   ["content"]
+                   .CastAs<IDictionary<string, object>>()
+                   .ContainsKey("headers")
+                   .ShouldBeFalse();
             }
 
             [TestCase("Bob Jones", "bob@jones.com", "Bob Jones <bob@jones.com>")]
