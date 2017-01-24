@@ -95,7 +95,7 @@ namespace SparkPost
 
             var result = WithCommonConventions(transmission, data);
 
-            CcHandling.Process(transmission, result);
+            CcHandling.DoStandardCcRewriting(transmission, result);
 
             return result;
         }

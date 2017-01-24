@@ -324,16 +324,13 @@ namespace SparkPost.Tests
             private Transmission transmission;
             private DataMapper mapper;
 
-            [TestCase(true)]
-            [TestCase(false)]
-            public void It_should_set_the_CC_Header_for_only_the_cc_emails(bool useTo)
+            [Test]
+            public void It_should_set_the_CC_Header_for_only_the_cc_emails()
             {
                 var recipient1 = new Recipient {Type = RecipientType.CC, Address = new Address {Email = Guid.NewGuid().ToString()}};
-                var recipient2 = new Recipient {Type = RecipientType.BCC, Address = new Address { Email = Guid.NewGuid().ToString()}};
+                var recipient2 = new Recipient {Type = RecipientType.To, Address = new Address {Email = Guid.NewGuid().ToString()}};
                 var recipient3 = new Recipient {Type = RecipientType.CC, Address = new Address {Email = Guid.NewGuid().ToString()}};
-                var recipient4 = useTo 
-                        ? new Recipient { Type = RecipientType.To, Address = new Address { Email = Guid.NewGuid().ToString() } }
-                        : new Recipient();
+                var recipient4 = new Recipient {Type = RecipientType.BCC, Address = new Address { Email = Guid.NewGuid().ToString()}};
 
                 transmission.Recipients = new List<Recipient> {recipient1, recipient2, recipient3, recipient4};
 
@@ -347,18 +344,15 @@ namespace SparkPost.Tests
                 cc.ShouldEqual(recipient1.Address.Email + ", " + recipient3.Address.Email);
             }
             
-            [TestCase(true)]
-            [TestCase(false)]
-            public void It_should_not_overwrite_any_existing_headers(bool useTo)
+            [Test]
+            public void It_should_not_overwrite_any_existing_headers()
             {
                 var key = Guid.NewGuid().ToString();
                 var value = Guid.NewGuid().ToString();
 
                 var recipient1 = new Recipient {Type = RecipientType.CC, Address = new Address {Email = Guid.NewGuid().ToString()}};
-                var recipient2 = useTo
-                        ? new Recipient { Type = RecipientType.To, Address = new Address() }
-                        : new Recipient();
-                transmission.Recipients = new List<Recipient> {recipient1, recipient2};
+                var toRecipient = new Recipient { Type = RecipientType.To, Address = new Address() };
+                transmission.Recipients = new List<Recipient> {recipient1, toRecipient};
 
                 transmission.Content.Headers[key] = value;
 
@@ -370,19 +364,15 @@ namespace SparkPost.Tests
                     [key].ShouldEqual(value);
             }
 
-            [TestCase(true)]
-            [TestCase(false)]
-            public void It_should_not_set_the_cc_if_there_are_no_cc_emails(bool useTo)
+            [Test]
+            public void It_should_not_set_the_cc_if_there_are_no_cc_emails()
             {
                 var key = Guid.NewGuid().ToString();
                 var value = Guid.NewGuid().ToString();
 
-                var recipient1 = useTo
-                        ? new Recipient { Type = RecipientType.To, Address = new Address { Email = Guid.NewGuid().ToString() } }
-                        : new Recipient();
+                var recipient1 = new Recipient {Type = RecipientType.To, Address = new Address {Email = Guid.NewGuid().ToString()}};
                 var recipient2 = new Recipient {Type = RecipientType.BCC, Address = new Address {Email = Guid.NewGuid().ToString()}};
-                var recipient3 = new Recipient { Type = RecipientType.BCC, Address = new Address { Email = Guid.NewGuid().ToString() } };
-                transmission.Recipients = new List<Recipient> {recipient1, recipient2, recipient3};
+                transmission.Recipients = new List<Recipient> {recipient1, recipient2};
 
                 transmission.Content.Headers[key] = value;
 
@@ -395,13 +385,10 @@ namespace SparkPost.Tests
                     .ShouldBeFalse();
             }
 
-            [TestCase(true)]
-            [TestCase(false)]
-            public void It_should_not_set_a_header_value_if_there_are_no_ccs(bool useTo)
+            [Test]
+            public void It_should_not_set_a_header_value_if_there_are_no_ccs()
             {
-                var recipient1 = useTo
-                        ? new Recipient { Type = RecipientType.To, Address = new Address { Email = Guid.NewGuid().ToString() } }
-                        : new Recipient();
+                var recipient1 = new Recipient {Type = RecipientType.To, Address = new Address {Email = Guid.NewGuid().ToString()}};
                 var recipient2 = new Recipient {Type = RecipientType.BCC, Address = new Address {Email = Guid.NewGuid().ToString()}};
                 transmission.Recipients = new List<Recipient> {recipient1, recipient2};
 
@@ -412,16 +399,13 @@ namespace SparkPost.Tests
                     .ShouldBeFalse();
             }
 
-            [TestCase(true)]
-            [TestCase(false)]
-            public void It_should_ignore_empty_ccs(bool useTo)
+            [Test]
+            public void It_should_ignore_empty_ccs()
             {
                 var recipient1 = new Recipient {Type = RecipientType.CC, Address = new Address {Email = ""}};
                 var recipient2 = new Recipient {Type = RecipientType.CC, Address = new Address {Email = null}};
                 var recipient3 = new Recipient {Type = RecipientType.CC, Address = new Address {Email = " "}};
-                var toRecipient = useTo
-                        ? new Recipient { Type = RecipientType.To, Address = new Address() }
-                        : new Recipient();
+                var toRecipient = new Recipient { Type = RecipientType.To, Address = new Address() };
                 transmission.Recipients = new List<Recipient> {recipient1, recipient2, recipient3, toRecipient};
 
                  mapper.ToDictionary(transmission)
@@ -431,14 +415,11 @@ namespace SparkPost.Tests
                     .ShouldBeFalse();
             }
 
-            [TestCase(true)]
-            [TestCase(false)]
-            public void It_should_ignore_any_cc_recipients_with_no_address(bool useTo)
+            [Test]
+            public void It_should_ignore_any_cc_recipients_with_no_address()
             {
                 var recipient1 = new Recipient {Type = RecipientType.CC, Address = null};
-                var toRecipient = useTo
-                        ? new Recipient { Type = RecipientType.To, Address = new Address() }
-                        : new Recipient();
+                var toRecipient = new Recipient { Type = RecipientType.To, Address = new Address() };
                 transmission.Recipients = new List<Recipient> {recipient1, toRecipient};
 
                  mapper.ToDictionary(transmission)
@@ -472,6 +453,37 @@ namespace SparkPost.Tests
                 }
             }
 
+            [Test]
+            public void It_should_throw_exception_with_no_to_recipient()
+            {
+                var recipient1 = new Recipient { Type = RecipientType.CC, Address = new Address() };
+                var recipient2 = new Recipient { Type = RecipientType.BCC, Address = new Address() };
+                transmission.Recipients = new List<Recipient> { recipient1, recipient2 };
+
+                Assert.That(() => { mapper.ToDictionary(transmission); }, Throws.ArgumentException);
+            }
+
+            [Test]
+            public void It_should_throw_exception_with_multiple_to_recipients()
+            {
+                var recipient1 = new Recipient { Type = RecipientType.To, Address = new Address() };
+                var recipient2 = new Recipient { Type = RecipientType.To, Address = new Address() };
+                var recipient3 = new Recipient { Type = RecipientType.CC, Address = new Address() };
+                transmission.Recipients = new List<Recipient> { recipient1, recipient2, recipient3 };
+
+                Assert.That(() => { mapper.ToDictionary(transmission); }, Throws.ArgumentException);
+            }
+
+            [Test]
+            public void It_should_throw_exception_if_to_has_no_address()
+            {
+                var recipient1 = new Recipient { Type = RecipientType.To, Address = null };
+                var recipient2 = new Recipient { Type = RecipientType.BCC, Address = new Address() };
+                transmission.Recipients = new List<Recipient> { recipient1, recipient2 };
+
+                Assert.That(() => { mapper.ToDictionary(transmission); }, Throws.ArgumentException);
+            }
+
             [TestCase("Bob Jones", "bob@jones.com", "Bob Jones <bob@jones.com>")]
             [TestCase(null, "bob@jones.com", "bob@jones.com")]
             [TestCase("", "bob@jones.com", "bob@jones.com")]
@@ -489,49 +501,6 @@ namespace SparkPost.Tests
                     .CastAs<IDictionary<string, string>>()
                     ["CC"]
                     .ShouldEqual(result);
-            }
-
-            [TestCase(0)]
-            [TestCase(1)]
-            [TestCase(2)]
-            public void It_should_use_new_or_legacy_handling(int numOfTos)
-            {
-                var ccAddress = Guid.NewGuid().ToString();
-                transmission.Recipients.Add(new Recipient { Type = RecipientType.CC, Address = new Address(ccAddress) });
-
-                for (int i = 0; i < numOfTos; ++i)
-                {
-                    transmission.Recipients.Add(new Recipient { Type = RecipientType.To, Address = new Address("bob@example.com") });
-                }
-
-                var ccHeader = mapper.ToDictionary(transmission)
-                    ["content"]
-                    .CastAs<IDictionary<string, object>>()
-                    ["headers"]
-                    .CastAs<IDictionary<string, string>>()
-                    ["CC"];
-
-                if (numOfTos == 1)
-                    ccHeader.ShouldEqual(ccAddress);
-                else
-                    ccHeader.ShouldEqual($"<{ccAddress}>");
-            }
-
-            [Test]
-            public void It_should_use_legacy_handling_if_to_address_is_null()
-            {
-                var ccAddress = Guid.NewGuid().ToString();
-                transmission.Recipients.Add(new Recipient { Type = RecipientType.CC, Address = new Address(ccAddress) });
-                transmission.Recipients.Add(new Recipient { Type = RecipientType.To, Address = null });
-                
-                var ccHeader = mapper.ToDictionary(transmission)
-                    ["content"]
-                    .CastAs<IDictionary<string, object>>()
-                    ["headers"]
-                    .CastAs<IDictionary<string, string>>()
-                    ["CC"];
-
-                ccHeader.ShouldEqual($"<{ccAddress}>");
             }
         }
 
