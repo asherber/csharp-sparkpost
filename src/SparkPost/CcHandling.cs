@@ -72,14 +72,14 @@ namespace SparkPost
             if (address == null)
                 return null;
 
-            if (String.IsNullOrWhiteSpace(address.Name))
-                return address.Email;
-            else if (String.IsNullOrWhiteSpace(address.Email))
+            if (String.IsNullOrWhiteSpace(address.Email))
                 return null;
+            else if (String.IsNullOrWhiteSpace(address.Name))
+                return address.Email.Trim();
             else
             {
                 var name = Regex.IsMatch(address.Name, @"[^\w ]") ? $"\"{address.Name}\"" : address.Name;
-                return $"{name} <{address.Email}>";
+                return $"{name} <{address.Email.Trim()}>";
             }
         }
 
