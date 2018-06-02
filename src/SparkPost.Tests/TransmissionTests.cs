@@ -50,7 +50,7 @@ namespace SparkPost.Tests
             }
         }
 
-        /*
+
         [TestFixture]
         public class ParseTests
         {
@@ -194,6 +194,6 @@ namespace SparkPost.Tests
                 var decoded = Encoding.ASCII.GetString(bytes);
                 Assert.That(decoded, Is.EqualTo(text));
             }
-        } //*/
+        } 
     }
 }
